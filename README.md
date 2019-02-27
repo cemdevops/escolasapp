@@ -57,7 +57,7 @@ module.exports = {
 ## Run frontend
 
 **NOTE:** AngularCli generates a development project.
-and it has two modes, a development and production modes
+and it has two modes, a development and production modes.
 
 To build and run the frontend in **development mode**, do:
 ```
