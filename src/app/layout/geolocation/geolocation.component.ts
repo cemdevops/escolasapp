@@ -71,14 +71,14 @@ export class GeolocationComponent implements OnInit, OnDestroy {
     id: 'mapbox',
     name: 'Mapbox',
     enabled: false,
-    // layer: L.tileLayer('https://a.tiles.mapbox.com/v4/mapbox.dark/{z}/{x}/{y}.png?access_token={token}', {
-    layer: L.tileLayer('https://a.tiles.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token={token}', {
-      minZoom: 1,
-      maxZoom: 19,
-      style: 'mapbox://styles/mapbox/streets-v9',
+    // layer: L.tileLayer('https://a.tiles.mapbox.com/v4/mapbox.dark/{z}/{x}/{y}.png?access_token={t$
+    layer: L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access$
+      tileSize: 512,
+      maxZoom: 18,
+      zoomOffset: -1,
       attribution: 'Mapbox',
       subdomains: ['a', 'b', 'c', 'd'],
-      token: 'pk.eyJ1IjoicHppZWdsZXIiLCJhIjoiY2ltMHo3OGRxMDh0MXR5a3JrdHNqaGQ0bSJ9.KAFBMeyysBLz4Ty-ltXVQQ'
+      token: 'pk.eyJ1IjoicHppZWdsZXIiLCJhIjoiY2ltMHo3OGRxMDh0MXR5a3JrdHNqaGQ0bSJ9.KAFBMeyysBLz4Ty-lt$
     })
   };
 
