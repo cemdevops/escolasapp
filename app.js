@@ -14,7 +14,7 @@ mongoose.Promise = global.Promise;
 
 // Call connection to MongoDB on localhost:27017
 var db = require('./config/dbconfig.js');
-mongoose.connect(db.url);
+mongoose.connect(db.url, db.options);
 
 var app = express();
 
