@@ -20,8 +20,8 @@ COPY package*.json ./
 
 # Install dependencies (all, needed for Angular CLI build)
 # Use npm install as fallback if package-lock.json doesn't exist
-# inotify and other native modules can now compile successfully
-RUN if [ -f package-lock.json ]; then npm ci; else npm install --legacy-peer-deps; fi
+# Skip install scripts to avoid inotify@1.4.6 compilation error (incompatible with Node 12)
+RUN if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --legacy-peer-deps --ignore-scripts; fi
 
 # Copy source code
 COPY . .
@@ -52,8 +52,8 @@ COPY package*.json ./
 
 # Install production dependencies only
 # Use npm install as fallback if package-lock.json doesn't exist
-# inotify and other native modules can now compile successfully
-RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --legacy-peer-deps; fi && \
+# Skip install scripts to avoid inotify@1.4.6 compilation error (incompatible with Node 12)
+RUN if [ -f package-lock.json ]; then npm ci --only=production --ignore-scripts; else npm install --legacy-peer-deps --ignore-scripts; fi && \
     npm cache clean --force
 
 # Copy application code from source
