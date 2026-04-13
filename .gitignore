@@ -45,3 +45,9 @@ Thumbs.db
 # configuration
 /config
 
+# Environment variables (local only, never commit)
+.env
+.env.local
+.env.*.local
+*.local
+
