@@ -1,0 +1,50 @@
+---
+# Vagrant Provisioning Playbook
+# Called by Vagrant provisioner after bootstrap.sh
+# Sets up Docker and deploys application
+
+- name: Vagrant Local Development Provisioning
+  hosts: local
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - inventories/development/group_vars/all.yml
+
+  roles:
+    - role: docker_setup
+      tags:
+        - docker
+        - docker_setup
+        - always
+
+    - role: app_setup
+      tags:
+        - app
+        - app_setup
+        - always
+
+  post_tasks:
+    - name: Print access information
+      debug:
+        msg: |
+          ========================================
+          Application Setup Complete!
+          ========================================
+          
+          Application URL: http://localhost:3002
+          MongoDB: localhost:27017
+          Debug Port: localhost:9229
+          
+          Access container:
+            docker exec -it escolasapp_app /bin/sh
+          
+          View logs:
+            docker-compose logs -f app
+          
+          Restart containers:
+            docker-compose restart
+          
+          For more info: cat INFRASTRUCTURE.md
+          ========================================
+      tags:
+        - info

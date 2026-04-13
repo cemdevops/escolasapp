@@ -1,0 +1,9 @@
+# Staging environment inventory
+# Update with actual staging server IP/hostname
+
+[staging]
+staging.example.com ansible_user=admin ansible_ssh_private_key_file=~/.ssh/staging_key
+
+[staging:vars]
+ansible_port=22
+ansible_python_interpreter=/usr/bin/python3

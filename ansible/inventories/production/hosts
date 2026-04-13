@@ -1,0 +1,11 @@
+# Production environment inventory
+# Update with actual production server IPs/hostnames
+# For HA setup, add multiple servers here
+
+[production]
+prod1.example.com ansible_user=admin ansible_ssh_private_key_file=~/.ssh/prod_key
+# prod2.example.com ansible_user=admin ansible_ssh_private_key_file=~/.ssh/prod_key
+
+[production:vars]
+ansible_port=22
+ansible_python_interpreter=/usr/bin/python3

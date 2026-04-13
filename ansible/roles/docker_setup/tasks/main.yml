@@ -1,0 +1,155 @@
+---
+# Docker Setup Role - Tasks
+# Installs and configures Docker and Docker Compose
+
+- name: Install Docker prerequisites
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: true
+  tags:
+    - docker
+    - packages
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags:
+    - docker
+    - security
+
+- name: Add Docker repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+    state: present
+  tags:
+    - docker
+    - packages
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+    update_cache: true
+  tags:
+    - docker
+    - packages
+
+- name: Install Docker Compose
+  get_url:
+    url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-{{ ansible_system }}-{{ ansible_machine }}
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  tags:
+    - docker
+    - packages
+
+- name: Create symlink for docker-compose
+  file:
+    src: /usr/local/bin/docker-compose
+    dest: /usr/bin/docker-compose
+    state: link
+  tags:
+    - docker
+
+- name: Create docker group
+  group:
+    name: docker
+    state: present
+  tags:
+    - docker
+    - users
+
+- name: Add vagrant user to docker group
+  user:
+    name: vagrant
+    groups: docker
+    append: yes
+  when: ansible_user_id | int == 0 and ansible_user != "root"
+  tags:
+    - docker
+    - users
+
+- name: Add ubuntu user to docker group (on remote servers)
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+  when: ansible_connection != "local" and ansible_user_id | int == 0
+  ignore_errors: yes
+  tags:
+    - docker
+    - users
+
+- name: Enable Docker service
+  systemd:
+    name: docker
+    daemon_reload: yes
+    enabled: yes
+    state: started
+  tags:
+    - docker
+    - services
+
+- name: Configure Docker daemon (logging)
+  copy:
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "10m",
+          "max-file": "3"
+        }
+      }
+    dest: /etc/docker/daemon.json
+    mode: '0644'
+  notify: Restart Docker service
+  tags:
+    - docker
+    - config
+
+- name: Verify Docker installation
+  command: docker --version
+  register: docker_version
+  changed_when: false
+  tags:
+    - docker
+    - verify
+
+- name: Verify Docker Compose installation
+  command: docker-compose --version
+  register: docker_compose_version
+  changed_when: false
+  tags:
+    - docker
+    - verify
+
+- name: Test Docker connectivity
+  docker_info:
+  register: docker_info
+  tags:
+    - docker
+    - verify
+
+- name: Display Docker version
+  debug:
+    msg: "Docker {{ docker_version.stdout }}"
+  tags:
+    - docker
+    - verify
+
+- name: Display Docker Compose version
+  debug:
+    msg: "{{ docker_compose_version.stdout }}"
+  tags:
+    - docker
+    - verify

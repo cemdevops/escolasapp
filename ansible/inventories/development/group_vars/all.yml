@@ -1,0 +1,43 @@
+---
+# Development Environment Variables
+# Local development on Vagrant VM
+
+# Application Environment
+app_environment: development
+app_name: escolasapp
+app_port: 3002
+app_repo_url: https://github.com/cemdevops/escolasapp.git
+app_repo_branch: master
+app_repo_dest: /home/vagrant/escolasapp
+
+# Docker Configuration
+docker_registry_url: ghcr.io/cemdevops/escolasapp
+docker_registry_username: "{{ lookup('env', 'GHCR_USERNAME') | default('', true) }}"
+docker_registry_token: "{{ lookup('env', 'GHCR_TOKEN') | default('', true) }}"
+
+# Database Configuration
+db_host: mongodb
+db_port: 27017
+db_name: escolasapp_dev
+db_user: admin
+db_password: admin123
+db_url: "mongodb://{{ db_user }}:{{ db_password }}@{{ db_host }}:{{ db_port }}/{{ db_name }}"
+
+# MongoDB Docker Image
+mongo_image: mongo:3.6
+mongo_root_username: admin
+mongo_root_password: admin123
+
+# Node.js Configuration
+nodejs_version: 12
+npm_version: 6
+
+# Logging
+log_level: debug
+
+# Google Analytics
+google_analytics_code: UA-122157047-1
+
+# Environment-specific settings
+docker_compose_file: docker-compose.yml
+docker_compose_override_file: docker-compose.dev.yml

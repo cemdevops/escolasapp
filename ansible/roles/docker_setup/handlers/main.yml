@@ -1,0 +1,13 @@
+---
+# Docker Setup Role - Handlers
+
+- name: Restart Docker service
+  systemd:
+    name: docker
+    state: restarted
+  listen: Restart Docker service
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  listen: Reload systemd daemon

@@ -1,0 +1,180 @@
+---
+# Application Setup Role - Tasks
+# Clones repository, configures environment, and deploys containers
+
+- name: Install git
+  apt:
+    name: git
+    state: present
+    update_cache: true
+  tags:
+    - app
+    - packages
+
+- name: Create app directory
+  file:
+    path: "{{ app_repo_dest }}"
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: '0755'
+  when: ansible_connection == "local"
+  tags:
+    - app
+    - setup
+
+- name: Clone or update application repository
+  git:
+    repo: "{{ app_repo_url }}"
+    dest: "{{ app_repo_dest }}"
+    version: "{{ app_repo_branch }}"
+    accept_hostkey: yes
+  register: git_clone
+  tags:
+    - app
+    - deploy
+
+- name: Create .env file from template
+  template:
+    src: .env.j2
+    dest: "{{ app_repo_dest }}/.env"
+    owner: vagrant
+    group: vagrant
+    mode: '0600'
+  when: ansible_connection == "local"
+  notify: Restart app containers
+  tags:
+    - app
+    - config
+
+- name: Create .env file on remote servers
+  template:
+    src: .env.j2
+    dest: "{{ app_repo_dest }}/.env"
+    owner: "{{ deploy_user | default('ubuntu') }}"
+    group: "{{ deploy_user | default('ubuntu') }}"
+    mode: '0600'
+  when: ansible_connection != "local"
+  notify: Restart app containers
+  tags:
+    - app
+    - config
+
+- name: Build Docker image locally
+  docker_image:
+    name: "{{ docker_registry_url }}"
+    tag: latest
+    source: build
+    build:
+      path: "{{ app_repo_dest }}"
+      dockerfile: Dockerfile
+    push: no
+  register: docker_build
+  when: ansible_connection == "local"
+  tags:
+    - app
+    - docker
+    - build
+
+- name: Login to Docker registry
+  docker_login:
+    registry: "{{ docker_registry_url.split('/')[0] }}"
+    username: "{{ docker_registry_username }}"
+    password: "{{ docker_registry_token }}"
+  when: docker_registry_username != "" and docker_registry_token != ""
+  tags:
+    - app
+    - docker
+    - registry
+
+- name: Pull Docker image from registry (remote servers)
+  shell: |
+    docker pull {{ docker_registry_url }}:latest
+  register: docker_pull
+  when: ansible_connection != "local" and docker_registry_username != ""
+  tags:
+    - app
+    - docker
+    - registry
+
+- name: Create docker-compose.override.yml from template
+  template:
+    src: docker-compose.override.j2
+    dest: "{{ app_repo_dest }}/docker-compose.override.yml"
+    owner: vagrant
+    group: vagrant
+    mode: '0644'
+  when: ansible_connection == "local"
+  notify: Restart app containers
+  tags:
+    - app
+    - config
+
+- name: Verify docker-compose configuration
+  shell: |
+    cd {{ app_repo_dest }} && docker-compose config > /dev/null
+  register: compose_verify
+  changed_when: false
+  tags:
+    - app
+    - verify
+
+- name: Start application containers
+  docker_compose:
+    project_src: "{{ app_repo_dest }}"
+    state: present
+  when: ansible_connection == "local"
+  register: docker_compose
+  tags:
+    - app
+    - docker
+    - start
+
+- name: Start containers on remote (using shell)
+  shell: |
+    cd {{ app_repo_dest }} && docker-compose up -d
+  when: ansible_connection != "local"
+  register: docker_compose_remote
+  tags:
+    - app
+    - docker
+    - start
+
+- name: Wait for application to be healthy
+  uri:
+    url: "http://localhost:{{ app_port }}"
+    status_code: 200
+    method: GET
+    headers:
+      Accept: "text/html"
+  register: result
+  until: result.status == 200
+  retries: 6
+  delay: 10
+  when: ansible_connection == "local"
+  tags:
+    - app
+    - health
+
+- name: Display application status
+  debug:
+    msg: "Application is running on http://localhost:{{ app_port }}"
+  tags:
+    - app
+    - info
+
+- name: Display container status
+  shell: |
+    cd {{ app_repo_dest }} && docker-compose ps
+  register: container_status
+  changed_when: false
+  tags:
+    - app
+    - info
+
+- name: Show container status
+  debug:
+    msg: "{{ container_status.stdout }}"
+  tags:
+    - app
+    - info

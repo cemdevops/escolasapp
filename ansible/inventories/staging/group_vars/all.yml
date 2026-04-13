@@ -1,0 +1,50 @@
+---
+# Staging Environment Variables
+# Production-like environment with test data
+# SENSITIVE VALUES: Use ansible-vault to encrypt this file
+
+# Application Environment
+app_environment: staging
+app_name: escolasapp
+app_port: 3002
+app_repo_url: https://github.com/cemdevops/escolasapp.git
+app_repo_branch: master
+app_repo_dest: /opt/escolasapp
+
+# Docker Configuration
+docker_registry_url: ghcr.io/cemdevops/escolasapp
+docker_registry_username: "{{ vault_docker_registry_username }}"
+docker_registry_token: "{{ vault_docker_registry_token }}"
+
+# Database Configuration
+db_host: "{{ vault_db_host_staging }}"
+db_port: 27017
+db_name: escolasapp_staging
+db_user: "{{ vault_db_user_staging }}"
+db_password: "{{ vault_db_password_staging }}"
+db_url: "mongodb://{{ db_user }}:{{ db_password }}@{{ db_host }}:{{ db_port }}/{{ db_name }}"
+
+# MongoDB Docker Image
+mongo_image: mongo:3.6
+mongo_root_username: "{{ vault_db_user_staging }}"
+mongo_root_password: "{{ vault_db_password_staging }}"
+
+# Node.js Configuration
+nodejs_version: 12
+npm_version: 6
+
+# Logging
+log_level: info
+
+# Google Analytics
+google_analytics_code: UA-122157047-1
+
+# Environment-specific settings
+docker_compose_file: docker-compose.yml
+docker_compose_override_file: docker-compose.prod.yml
+
+# Deployment settings
+deploy_user: ubuntu
+docker_service_name: docker
+app_container_name: escolasapp_app
+mongodb_container_name: escolasapp_mongodb
