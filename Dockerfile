@@ -1,9 +1,8 @@
 # Multi-stage build for EscolasApp
-# Stage 1: Build Angular SPA
-# Stage 2: Runtime container with Node.js
+# Express.js server with Angular application (no build compilation in Docker)
 
 # ============================================================================
-# Stage 1: Build Angular SPA
+# Stage 1: Builder - Install dependencies
 # ============================================================================
 FROM node:12-alpine AS builder
 
@@ -11,62 +10,63 @@ LABEL stage=builder
 
 WORKDIR /app
 
-# Install build dependencies needed for native modules (like inotify)
-# Alpine 3.15: apk adds python3, make, g++, etc.
+# Install build dependencies for native modules compilation
 RUN apk add --no-cache python3 make g++ gcc
 
-# Copy package.json and package-lock.json
+# Copy package files
 COPY package*.json ./
 
-# Install dependencies (all, needed for Angular CLI build)
-# Use npm install as fallback if package-lock.json doesn't exist
-# Skip install scripts to avoid inotify@1.4.6 compilation error (incompatible with Node 12)
+# Install all dependencies (needed for Angular CLI and runtime)
+# Skip install scripts to avoid inotify@1.4.6 compilation errors
 RUN if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --legacy-peer-deps --ignore-scripts; fi
 
-# Copy source code
-COPY . .
-
-# Build Angular SPA for production
-RUN npm run build
-
 # ============================================================================
-# Stage 2: Runtime - Express Server with Angular Static Files
+# Stage 2: Runtime - Express Server
 # ============================================================================
 FROM node:12-alpine
 
 WORKDIR /app
 
 # Set environment variables
-ENV NODE_ENV production
-ENV PORT 3002
+ENV NODE_ENV=production
+ENV PORT=3002
+ENV LOG_LEVEL=info
 
-# Install runtime dependencies for native modules
+# Install runtime build dependencies (needed for node-gyp at runtime)
 RUN apk add --no-cache python3 make g++
 
-# Create app user for security (non-root)
+# Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy package.json and package-lock.json from builder
+# Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-# Use npm install as fallback if package-lock.json doesn't exist
-# Skip install scripts to avoid inotify@1.4.6 compilation error (incompatible with Node 12)
+# Install production dependencies (skip scripts to avoid compilation errors)
 RUN if [ -f package-lock.json ]; then npm ci --only=production --ignore-scripts; else npm install --legacy-peer-deps --ignore-scripts; fi && \
     npm cache clean --force
 
 # Copy application code from source
 COPY --chown=nodejs:nodejs . .
 
-# Copy pre-built Angular dist folder from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+# Copy node_modules from builder (optimization for production deps)
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Create directory for Angular dist (if pre-built)
+RUN mkdir -p ./dist ./public
 
 # Switch to non-root user
 USER nodejs
 
 # Expose application port
 EXPOSE 3002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3002/', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+# Start application
+CMD ["node", "./bin/www"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
