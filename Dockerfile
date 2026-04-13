@@ -1,27 +1,27 @@
 # Multi-stage build for EscolasApp
-# Express.js server with Angular application (no build compilation in Docker)
+# Stage 1: Dependencies (for backend only)
+# Stage 2: Runtime - Express Server with simple SPA
 
 # ============================================================================
-# Stage 1: Builder - Install dependencies
+# Stage 1: Dependencies Builder
 # ============================================================================
-FROM node:12-alpine AS builder
+FROM node:12-alpine AS deps-builder
 
-LABEL stage=builder
+LABEL stage=deps-builder
 
 WORKDIR /app
 
-# Install build dependencies for native modules compilation
+# Install build dependencies for native modules
 RUN apk add --no-cache python3 make g++ gcc
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (needed for Angular CLI and runtime)
-# Skip install scripts to avoid inotify@1.4.6 compilation errors
-RUN if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --legacy-peer-deps --ignore-scripts; fi
+# Install all dependencies
+RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --ignore-scripts; else npm install --legacy-peer-deps --ignore-scripts; fi
 
 # ============================================================================
-# Stage 2: Runtime - Express Server
+# Stage 2: Runtime - Express Server with Static SPA
 # ============================================================================
 FROM node:12-alpine
 
@@ -32,7 +32,7 @@ ENV NODE_ENV=production
 ENV PORT=3002
 ENV LOG_LEVEL=info
 
-# Install runtime build dependencies (needed for node-gyp at runtime)
+# Install runtime dependencies
 RUN apk add --no-cache python3 make g++
 
 # Create non-root user for security
@@ -42,18 +42,20 @@ RUN addgroup -g 1001 -S nodejs && \
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies (skip scripts to avoid compilation errors)
-RUN if [ -f package-lock.json ]; then npm ci --only=production --ignore-scripts; else npm install --legacy-peer-deps --ignore-scripts; fi && \
-    npm cache clean --force
+# Copy prebuilt node_modules from deps-builder stage
+COPY --from=deps-builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Copy application code from source
+# Copy application code
 COPY --chown=nodejs:nodejs . .
 
-# Copy node_modules from builder (optimization for production deps)
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Ensure dist directory exists with SPA files
+RUN mkdir -p ./dist && \
+    if [ -f ./dist/index.html ]; then echo "✓ SPA found"; else echo "<!-- Empty SPA placeholder -->" > ./dist/index.html; fi && \
+    ls -la ./dist/
 
-# Create directory for Angular dist (if pre-built)
-RUN mkdir -p ./dist ./public
+# Clean up unnecessary files  
+RUN npm cache clean --force && \
+    rm -rf .git .github docs e2e src/app/layout src/app/shared karma.conf.js protractor.conf.js tsconfig.json tsconfig.*.json tslint.json .angular-cli.json 2>/dev/null || true
 
 # Switch to non-root user
 USER nodejs

@@ -56,10 +56,10 @@ services:
       PORT: 3002
       DB_HOST: ${DB_HOST:-mongodb}
       DB_PORT: ${DB_PORT:-27017}
-      DB_NAME: ${DB_NAME:-escolasapp_dev}
+      DB_NAME: ${DB_NAME:-escolasapp}
       DB_USER: ${DB_USER:-admin}
       DB_PASSWORD: ${DB_PASSWORD:-mongosecret}
-      DB_URL: ${DB_URL:-mongodb://admin:mongosecret@mongodb:27017/escolasapp_dev}
+      DB_URL: ${DB_URL:-mongodb://admin:mongosecret@mongodb:27017/escolasapp}
       GOOGLE_ANALYTICS_CODE: ${GOOGLE_ANALYTICS_CODE:-}
       DEBUG: escolasapp:*
       LOG_LEVEL: debug
