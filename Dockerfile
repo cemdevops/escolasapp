@@ -15,7 +15,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (all, needed for Angular CLI build)
-RUN npm ci
+# Use npm install as fallback if package-lock.json doesn't exist
+RUN if [ -f package-lock.json ]; then npm ci; else npm install --legacy-peer-deps; fi
 
 # Copy source code
 COPY . .
@@ -42,7 +43,8 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production && \
+# Use npm install as fallback if package-lock.json doesn't exist
+RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --legacy-peer-deps; fi && \
     npm cache clean --force
 
 # Copy application code from source

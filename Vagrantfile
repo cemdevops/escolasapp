@@ -68,14 +68,16 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", path: "vagrant/bootstrap.sh"
 
   # Ansible provisioner - provision Docker and app
-  config.vm.provision "ansible_local" do |ansible|
-    ansible.playbook = "ansible/playbooks/vagrant_provision.yml"
-    ansible.inventory_path = "ansible/inventories/development/hosts"
-    ansible.verbose = false
-    ansible.limit = "local"
-    # Uncomment for verbose Ansible output:
-    # ansible.verbose = "vvv"
-  end
+  # TEMPORARILY COMMENTED for Windows testing (Ansible not fully available on Windows)
+  # Will re-enable after shell provisioning is validated
+  # config.vm.provision "ansible_local" do |ansible|
+  #   ansible.playbook = "ansible/playbooks/vagrant_provision.yml"
+  #   ansible.inventory_path = "ansible/inventories/development/hosts"
+  #   ansible.verbose = false
+  #   ansible.limit = "local"
+  #   # Uncomment for verbose Ansible output:
+  #   # ansible.verbose = "vvv"
+  # end
 
   # ============================================================================
   # SSH Configuration
