@@ -12,8 +12,8 @@ LABEL stage=builder
 WORKDIR /app
 
 # Install build dependencies needed for native modules (like inotify)
-# Alpine: apk adds Python, make, g++, etc.
-RUN apk add --no-cache python make g++ gcc
+# Alpine 3.15: apk adds python3, make, g++, etc.
+RUN apk add --no-cache python3 make g++ gcc
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
@@ -41,7 +41,7 @@ ENV NODE_ENV production
 ENV PORT 3002
 
 # Install runtime dependencies for native modules
-RUN apk add --no-cache python make g++
+RUN apk add --no-cache python3 make g++
 
 # Create app user for security (non-root)
 RUN addgroup -g 1001 -S nodejs && \
