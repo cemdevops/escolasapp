@@ -1,0 +1,206 @@
+version: '3.8'
+
+# Docker Compose for EscolasApp with environment profiles
+#
+# Profiles:
+#   [all]        - Start all services
+#   [dev]        - Development (build from source, hot-reload, debug)
+#   [staging]    - Staging (pull from registry, hardened config)
+#   [production] - Production (pull from registry, maximum hardening)
+#   [admin]      - Admin tools (mongo-express)
+#
+# Usage:
+#   Development with tools:  docker-compose --profile dev --profile admin up -d
+#   Staging only:             docker-compose --profile staging up -d
+#   Production:               docker-compose --profile production up -d
+#   All services:             docker-compose --profile all up -d
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+
+services:
+  # ============================================================================
+  # MongoDB (Shared foundation - used by all profiles)
+  # ============================================================================
+  mongodb:
+    image: mongo:3.6
+    container_name: escolasapp_mongodb
+    profiles: [all, dev, staging, production]
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ${DB_NAME:-escolasapp}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:-admin123}
+    ports:
+      - '${DB_PORT:-27017}:27017'
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test: ['CMD-SHELL', 'mongo --eval "db.adminCommand(''ping'')"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # Application - Development Profile
+  # Build from source with hot-reload volumes and debug port
+  # ============================================================================
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: escolasapp_app
+    profiles: [all, dev]
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DB_HOST: ${DB_HOST:-mongodb}
+      DB_PORT: ${DB_PORT:-27017}
+      DB_NAME: ${DB_NAME:-escolasapp_dev}
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_URL: ${DB_URL:-mongodb://admin:admin123@mongodb:27017/escolasapp_dev}
+      GOOGLE_ANALYTICS_CODE: ${GOOGLE_ANALYTICS_CODE:-}
+      DEBUG: escolasapp:*
+      LOG_LEVEL: debug
+    ports:
+      - '3002:3002'
+      - '9229:9229' # Node debugger
+    volumes:
+      # Source code for live reloading
+      - ./src:/app/src
+      - ./routes:/app/routes
+      - ./models:/app/models
+      - ./app.js:/app/app.js
+      - ./bin:/app/bin
+      # Exclude node_modules from mount
+      - /app/node_modules
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3002', (r) => { if (r.statusCode !== 200) throw new Error(r.statusCode)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================================
+  # Application - Staging Profile
+  # Pull from registry, production-like with standardized logging
+  # ============================================================================
+  app-staging:
+    image: ${DOCKER_REGISTRY_URL:-ghcr.io/cemdevops/escolasapp}:latest
+    container_name: escolasapp_app
+    profiles: [all, staging]
+    restart: always
+    environment:
+      NODE_ENV: staging
+      PORT: 3002
+      DB_HOST: ${DB_HOST:-mongodb}
+      DB_PORT: ${DB_PORT:-27017}
+      DB_NAME: ${DB_NAME:-escolasapp_staging}
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_URL: ${DB_URL:-mongodb://admin:admin123@mongodb:27017/escolasapp_staging}
+      GOOGLE_ANALYTICS_CODE: ${GOOGLE_ANALYTICS_CODE:-}
+      DEBUG: ''
+      LOG_LEVEL: info
+    ports:
+      - '3002:3002'
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3002', (r) => { if (r.statusCode !== 200) throw new Error(r.statusCode)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  # ============================================================================
+  # Application - Production Profile
+  # Pull from registry, maximum hardening, no exposed ports
+  # ============================================================================
+  app-prod:
+    image: ${DOCKER_REGISTRY_URL:-ghcr.io/cemdevops/escolasapp}:latest
+    container_name: escolasapp_app
+    profiles: [all, production]
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DB_HOST: ${DB_HOST:-mongodb}
+      DB_PORT: ${DB_PORT:-27017}
+      DB_NAME: ${DB_NAME:-escolasapp_prod}
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_URL: ${DB_URL:-mongodb://admin:admin123@mongodb:27017/escolasapp_prod}
+      GOOGLE_ANALYTICS_CODE: ${GOOGLE_ANALYTICS_CODE:-}
+      DEBUG: ''
+      LOG_LEVEL: warn
+    ports: [] # No exposed port - use reverse proxy upstream
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3002', (r) => { if (r.statusCode !== 200) throw new Error(r.statusCode)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+    security_opt:
+      - no-new-privileges:true
+
+  # ============================================================================
+  # Admin Tools - Development/Debugging
+  # Optional MongoDB browser interface
+  # ============================================================================
+  mongo-express:
+    image: mongo-express:latest
+    container_name: escolasapp_mongo_express
+    profiles: [all, admin]
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_USER:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASSWORD:-admin123}
+      ME_CONFIG_MONGODB_URL: mongodb://${DB_USER:-admin}:${DB_PASSWORD:-admin123}@mongodb:27017/
+      ME_CONFIG_BASICAUTH: 'false'
+    ports:
+      - '8081:8081' # Access at http://localhost:8081
+    depends_on:
+      mongodb:
+        condition: service_healthy
