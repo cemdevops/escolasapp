@@ -5,7 +5,7 @@
 # ============================================================================
 # Stage 1: Build Angular SPA
 # ============================================================================
-FROM node:12-alpine AS builder
+FROM node:12 AS builder
 
 LABEL stage=builder
 
@@ -16,6 +16,7 @@ COPY package*.json ./
 
 # Install dependencies (all, needed for Angular CLI build)
 # Use npm install as fallback if package-lock.json doesn't exist
+# node:12 (Debian) includes Python and build-essentials needed for native modules like inotify
 RUN if [ -f package-lock.json ]; then npm ci; else npm install --legacy-peer-deps; fi
 
 # Copy source code
@@ -27,7 +28,7 @@ RUN npm run build
 # ============================================================================
 # Stage 2: Runtime - Express Server with Angular Static Files
 # ============================================================================
-FROM node:12-alpine
+FROM node:12-slim
 
 WORKDIR /app
 
@@ -36,14 +37,15 @@ ENV NODE_ENV production
 ENV PORT 3002
 
 # Create app user for security (non-root)
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN groupadd -r nodejs && \
+    useradd -r -g nodejs nodejs
 
 # Copy package.json and package-lock.json from builder
 COPY package*.json ./
 
 # Install production dependencies only
 # Use npm install as fallback if package-lock.json doesn't exist
+# node:12-slim includes necessary runtime dependencies including Python for native modules
 RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --legacy-peer-deps; fi && \
     npm cache clean --force
 
