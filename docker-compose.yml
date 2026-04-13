@@ -71,8 +71,10 @@ services:
       - ./src:/app/src
       - ./routes:/app/routes
       - ./models:/app/models
+      - ./config:/app/config
       - ./app.js:/app/app.js
       - ./bin:/app/bin
+      - ./dist:/app/dist
       # Exclude node_modules from mount
       - /app/node_modules
     depends_on:

@@ -14,7 +14,43 @@ mongoose.Promise = global.Promise;
 
 // Call connection to MongoDB on localhost:27017
 var db = require('./config/dbconfig.js');
-mongoose.connect(db.url, db.options);
+
+// Connection events logging (Phase 5 optimization)
+mongoose.connection.on('connecting', () => {
+  const displayUrl = db.url.includes('@') 
+    ? db.url.replace(/:[^@]*@/, ':***@')
+    : db.url;
+  console.log('[MONGO] Attempting connection to:', displayUrl);
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('[MONGO] ✓ Connected successfully!');
+  if (mongoose.connection.db) {
+    console.log('[MONGO] Database:', mongoose.connection.db.name);
+  }
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('[MONGO] ✗ Connection error:', err.message);
+  if (err.reason) {
+    console.error('[MONGO] Reason:', err.reason);
+  }
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('[MONGO] ⚠ Disconnected from database');
+});
+
+// Establish connection with retry logic
+mongoose
+  .connect(db.url, db.options)
+  .then(() => {
+    console.log('[MONGO] Connection promise resolved');
+  })
+  .catch((err) => {
+    console.error('[MONGO] Connection promise rejected:', err.message);
+    // Don't exit - let it retry through connection events
+  });
 
 var app = express();
 
