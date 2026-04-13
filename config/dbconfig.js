@@ -2,19 +2,23 @@
 // Connects to MongoDB service in docker-compose
 
 module.exports = {
-  // MongoDB connection URL - use environment variable if provided
+  // MongoDB connection URL with embedded credentials
   url: process.env.DB_URL || 'mongodb://admin:mongosecret@mongodb:27017/escolasapp',
   
-  // MongoDB connection options
+  // MongoDB connection options (optimized for MongoDB 3.6 with Mongoose 5.13+)
   options: {
     authSource: 'admin',
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    useMongoClient: true,
-    reconnectTries: 30,
-    reconnectInterval: 500,
-    bufferMaxEntries: 0,
-    connectTimeoutMS: 30000,
-    socketTimeoutMS: 30000
+    // Connection pool settings
+    maxPoolSize: 10,
+    minPoolSize: 2,
+    // Retry settings
+    retryWrites: false, // MongoDB 3.6 doesn't support retryWrites well
+    // Timeout settings
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    // Prevent buffer overflow
+    bufferMaxEntries: 0
   }
 };
