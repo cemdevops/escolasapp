@@ -1,0 +1,88 @@
+# AlertManager Configuration for EscolasApp
+# Routes and groups alerts
+
+global:
+  resolve_timeout: 5m
+  # SMTP configuration for email alerts (optional)
+  # smtp_smarthost: 'smtp.gmail.com:587'
+  # smtp_auth_username: 'your-email@gmail.com'
+  # smtp_auth_password: 'your-app-password'
+  # smtp_from: 'alerts@escolasapp.com'
+
+# Alert templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Alert routing tree
+route:
+  # Send all alerts to default receiver
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+
+  # Route for critical alerts - escalate immediately
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical'
+      group_wait: 0s
+      repeat_interval: 1h
+
+    - match:
+        severity: warning
+      receiver: 'warning'
+      group_wait: 30s
+      repeat_interval: 4h
+
+# Receivers define where alerts are sent
+receivers:
+  # Default receiver (console logging)
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://localhost:5001/'  # Webhook receiver (if configured)
+        send_resolved: true
+
+  # Critical alerts - immediate notification
+  - name: 'critical'
+    # Email notifications
+    email_configs:
+      - to: 'devops@escolasapp.com'
+        from: 'alerts@escolasapp.com'
+        smarthost: 'localhost:25'
+        require_tls: false
+    # Slack notifications
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#critical-alerts'
+        title: 'Critical Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    # PagerDuty for on-call escalation
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        description: '{{ .GroupLabels.alertname }}'
+        details:
+          Duration: '{{ .GroupLabels.severity }}'
+
+  # Warning alerts - batched notifications
+  - name: 'warning'
+    email_configs:
+      - to: 'team@escolasapp.com'
+        from: 'alerts@escolasapp.com'
+        smarthost: 'localhost:25'
+        require_tls: false
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#app-alerts'
+        title: 'Warning: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+# Inhibit rules to suppress certain alerts
+inhibit_rules:
+  # Suppress warning alerts if critical alert is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'dev', 'instance']

@@ -1,0 +1,107 @@
+# Prometheus Configuration for EscolasApp
+# Scrapes metrics from application, database, and system
+
+global:
+  scrape_interval: 15s      # How often to scrape targets
+  evaluation_interval: 15s  # How often to evaluate alert rules
+  external_labels:
+    monitor: 'escolasapp-monitor'
+
+# Alert rules files
+rule_files:
+  - 'alert_rules.yml'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Scrape configurations
+scrape_configs:
+  # ============================================================================
+  # Prometheus itself
+  # ============================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ============================================================================
+  # Node Exporter (System metrics)
+  # ============================================================================
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'node_(network|sockstat|netdev|softnet|tcp|udp|edac_errors|entropy|filefd|nf_conntrack|nfs|nfsd|pressure|schedstat|sockstat|timex|vmstat_oom_kill_total|slabinfo_.*_alloc_failed).*'
+        action: drop
+
+  # ============================================================================
+  # cAdvisor (Container metrics)
+  # ============================================================================
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'container_(network_tcp_usage_total|network_udp_usage_total|fs_inodes_total|fs_inodes_free|fs_usage_bytes)'
+        action: drop
+
+  # ============================================================================
+  # MongoDB Exporter (if available)
+  # ============================================================================
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb:27017']
+    metrics_path: '/metrics'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 'localhost:9216'
+
+  # ============================================================================
+  # Application (Node.js HTTP endpoints)
+  # ============================================================================
+  - job_name: 'escolasapp'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['app-dev:3002', 'app-staging:3002', 'app-prod:3002']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: (.+):(.+)
+        replacement: ${1}
+
+  # ============================================================================
+  # Custom health checks
+  # ============================================================================
+  - job_name: 'health-checks'
+    metrics_path: '/probe'
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - 'http://localhost:3002/'
+          - 'http://mongodb:27017'
+        labels:
+          service: 'app'
+      - targets:
+          - 'http://localhost:3002/school'
+          - 'http://localhost:3002/weightingarea'
+          - 'http://localhost:3002/ap-secvariable'
+          - 'http://localhost:3002/br-sp-rmsp-secvariable'
+        labels:
+          service: 'api'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

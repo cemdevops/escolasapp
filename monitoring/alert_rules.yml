@@ -1,0 +1,133 @@
+# Prometheus Alert Rules for EscolasApp
+# Defines conditions that trigger alerts
+
+groups:
+  - name: escolasapp_rules
+    interval: 30s
+    rules:
+      # ========================================================================
+      # Application Alerts
+      # ========================================================================
+      - alert: AppDown
+        expr: up{job="escolasapp"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: app
+        annotations:
+          summary: "EscolasApp is down"
+          description: "EscolasApp has been down for more than 2 minutes"
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: app
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% (current: {{ $value | humanizePercentage }})"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: app
+        annotations:
+          summary: "High response time"
+          description: "95th percentile response time is above 1 second (current: {{ $value }}s)"
+
+      # ========================================================================
+      # Database Alerts
+      # ========================================================================
+      - alert: MongoDBDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB has been unavailable for more than 1 minute"
+
+      - alert: MongoDBConnectionPoolExhausted
+        expr: mongodb_connections{state="available"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "MongoDB connection pool exhausted"
+          description: "No available MongoDB connections"
+
+      - alert: MongoDBHighMemory
+        expr: mongodb_memory_metrics_resident_mb > 500
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High MongoDB memory usage"
+          description: "MongoDB is using {{ $value }}MB of memory"
+
+      # ========================================================================
+      # System Alerts
+      # ========================================================================
+      - alert: HighCPUUsage
+        expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80% (current: {{ $value | humanizePercentage }})"
+
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk usage"
+          description: "Disk usage is above 90% (current: {{ $value | humanizePercentage }})"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 85% (current: {{ $value | humanizePercentage }})"
+
+      - alert: SystemLoadHigh
+        expr: node_load5 > on(instance) count(count(node_cpu_seconds_total) by (cpu)) by (instance) * 1.5
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High system load"
+          description: "System load average (5m) is {{ $value }}"
+
+      # ========================================================================
+      # Container Alerts
+      # ========================================================================
+      - alert: ContainerRestartingFrequently
+        expr: rate(container_last_seen{id!=""}[15m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: container
+        annotations:
+          summary: "Container restarting frequently"
+          description: "Container {{ $labels.name }} is restarting more than expected"
