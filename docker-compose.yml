@@ -29,19 +29,14 @@ services:
     profiles: [all, dev, staging, production]
     restart: unless-stopped
     environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongosecret}
       MONGO_INITDB_DATABASE: ${DB_NAME:-escolasapp}
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:-admin123}
     ports:
       - '${DB_PORT:-27017}:27017'
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
-    healthcheck:
-      test: ['CMD-SHELL', 'mongo --eval "db.adminCommand(''ping'')"']
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # ============================================================================
   # Application - Development Profile
@@ -63,8 +58,8 @@ services:
       DB_PORT: ${DB_PORT:-27017}
       DB_NAME: ${DB_NAME:-escolasapp_dev}
       DB_USER: ${DB_USER:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
-      DB_URL: ${DB_URL:-mongodb://admin:admin123@mongodb:27017/escolasapp_dev}
+      DB_PASSWORD: ${DB_PASSWORD:-mongosecret}
+      DB_URL: ${DB_URL:-mongodb://admin:mongosecret@mongodb:27017/escolasapp_dev}
       GOOGLE_ANALYTICS_CODE: ${GOOGLE_ANALYTICS_CODE:-}
       DEBUG: escolasapp:*
       LOG_LEVEL: debug
@@ -81,8 +76,7 @@ services:
       # Exclude node_modules from mount
       - /app/node_modules
     depends_on:
-      mongodb:
-        condition: service_healthy
+      - mongodb
     healthcheck:
       test:
         [
@@ -112,16 +106,15 @@ services:
       DB_PORT: ${DB_PORT:-27017}
       DB_NAME: ${DB_NAME:-escolasapp_staging}
       DB_USER: ${DB_USER:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
-      DB_URL: ${DB_URL:-mongodb://admin:admin123@mongodb:27017/escolasapp_staging}
+      DB_PASSWORD: ${DB_PASSWORD:-mongosecret}
+      DB_URL: ${DB_URL:-mongodb://admin:mongosecret@mongodb:27017/escolasapp_staging}
       GOOGLE_ANALYTICS_CODE: ${GOOGLE_ANALYTICS_CODE:-}
       DEBUG: ''
       LOG_LEVEL: info
     ports:
       - '3002:3002'
     depends_on:
-      mongodb:
-        condition: service_healthy
+      - mongodb
     healthcheck:
       test:
         [
@@ -156,15 +149,14 @@ services:
       DB_PORT: ${DB_PORT:-27017}
       DB_NAME: ${DB_NAME:-escolasapp_prod}
       DB_USER: ${DB_USER:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-admin123}
-      DB_URL: ${DB_URL:-mongodb://admin:admin123@mongodb:27017/escolasapp_prod}
+      DB_PASSWORD: ${DB_PASSWORD:-mongosecret}
+      DB_URL: ${DB_URL:-mongodb://admin:mongosecret@mongodb:27017/escolasapp_prod}
       GOOGLE_ANALYTICS_CODE: ${GOOGLE_ANALYTICS_CODE:-}
       DEBUG: ''
       LOG_LEVEL: warn
     ports: [] # No exposed port - use reverse proxy upstream
     depends_on:
-      mongodb:
-        condition: service_healthy
+      - mongodb
     healthcheck:
       test:
         [

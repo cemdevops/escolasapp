@@ -14,6 +14,9 @@ mongoose.Promise = global.Promise;
 
 // Call connection to MongoDB on localhost:27017
 var db = require('./config/dbconfig.js');
+console.log('[DEBUG] DB Config:', JSON.stringify({url: db.url, options_keys: Object.keys(db.options)}));
+console.log('[DEBUG] DB URL Raw:', process.env.DB_URL);
+console.log('[DEBUG] DB HOST:', process.env.DB_HOST, 'DB_PORT:', process.env.DB_PORT, 'DB_NAME:', process.env.DB_NAME);
 mongoose.connect(db.url, db.options);
 
 var app = express();
