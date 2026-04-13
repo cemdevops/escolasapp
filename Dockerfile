@@ -5,18 +5,22 @@
 # ============================================================================
 # Stage 1: Build Angular SPA
 # ============================================================================
-FROM node:12 AS builder
+FROM node:12-alpine AS builder
 
 LABEL stage=builder
 
 WORKDIR /app
+
+# Install build dependencies needed for native modules (like inotify)
+# Alpine: apk adds Python, make, g++, etc.
+RUN apk add --no-cache python make g++ gcc
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies (all, needed for Angular CLI build)
 # Use npm install as fallback if package-lock.json doesn't exist
-# node:12 (Debian) includes Python and build-essentials needed for native modules like inotify
+# inotify and other native modules can now compile successfully
 RUN if [ -f package-lock.json ]; then npm ci; else npm install --legacy-peer-deps; fi
 
 # Copy source code
@@ -28,7 +32,7 @@ RUN npm run build
 # ============================================================================
 # Stage 2: Runtime - Express Server with Angular Static Files
 # ============================================================================
-FROM node:12-slim
+FROM node:12-alpine
 
 WORKDIR /app
 
@@ -36,16 +40,19 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV PORT 3002
 
+# Install runtime dependencies for native modules
+RUN apk add --no-cache python make g++
+
 # Create app user for security (non-root)
-RUN groupadd -r nodejs && \
-    useradd -r -g nodejs nodejs
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 # Copy package.json and package-lock.json from builder
 COPY package*.json ./
 
 # Install production dependencies only
 # Use npm install as fallback if package-lock.json doesn't exist
-# node:12-slim includes necessary runtime dependencies including Python for native modules
+# inotify and other native modules can now compile successfully
 RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --legacy-peer-deps; fi && \
     npm cache clean --force
 
