@@ -68,27 +68,36 @@ router.get('/:id', function(req, res, next) {
 
 /* GET SCHOOLS LIST WHOSE NO_ENTIDAD LIKE 'TEXT'*/
 /* Teste: http://localhost:3002/school/search/cult */
-router.get('/search/:name', function(req, res, next) {
-  Schools.aggregate([
-    {
-      $match: {
-        "detalhes.nomeesc": {$regex: new RegExp(req.params.name,'ig')}
-        /*lat: {$ne:"NA"},
-        lon: {$ne:"NA"}*/
-      }
-    },
-    {
-      $project: {
-        nomeesc_bairro: { $concat: [ "$detalhes.nomeesc", " - ", "$detalhes.bairro" ] },
-        "detalhes.nomeesc":1,
-        codap: 1,
-        lon: 1,
-        lat: 1
-      }
-    }], function (err, result) {
-      if (err) return next(err);
-      res.json(result);
-    });
+router.get('/search/:name', async function(req, res, next) {
+  try {
+    const result = await Schools.aggregate([
+      {
+        $match: {
+          "detalhes.nomeesc": {$regex: new RegExp(req.params.name,'ig')},
+          lat: {$ne:"NA"},
+          lon: {$ne:"NA"}
+        }
+      },
+      {
+        $project: {
+          nomeesc_bairro: { $concat: [ "$detalhes.nomeesc", " - ", "$detalhes.bairro" ] },
+          "detalhes.nomeesc":1,
+          "detalhes.bairro":1,
+          codap: 1,
+          lon: 1,
+          lat: 1
+        }
+      },
+      { $limit: 50 }
+    ])
+    .allowDiskUse(true)
+    .exec();
+    
+    res.json(result);
+  } catch(err) {
+    console.error('[SCHOOL-SEARCH] Error:', err.message);
+    next(err);
+  }
 });
 
 /* SAVE ESCOLAS */

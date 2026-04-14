@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('escolasapp:server');
 var http = require('http');
+var mongoose = require('mongoose');
 
 /**
  * Get port from environment and store in Express.
@@ -21,12 +22,36 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
- * Listen on provided port, on all network interfaces.
+ * Wait for successful MongoDB connection before listening
  */
+function startServer() {
+  if (mongoose.connection.readyState === 1) {
+    // Connection already established
+    server.listen(port);
+    server.on('error', onError);
+    server.on('listening', onListening);
+  } else {
+    // Wait for connection event
+    mongoose.connection.once('connected', function() {
+      console.log('[SERVER] MongoDB connected, now listening on port', port);
+      server.listen(port);
+      server.on('error', onError);
+      server.on('listening', onListening);
+    });
+    
+    // If connection fails after 60 seconds, start anyway with warning
+    setTimeout(function() {
+      if (mongoose.connection.readyState !== 1) {
+        console.warn('[SERVER] ⚠ MongoDB connection timeout - starting server anyway');
+        server.listen(port);
+        server.on('error', onError);
+        server.on('listening', onListening);
+      }
+    }, 60000);
+  }
+}
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+startServer();
 
 /**
  * Normalize a port into a number, string, or false.

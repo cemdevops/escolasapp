@@ -68,12 +68,18 @@ export class GeolocationComponent implements OnInit, OnDestroy {
 
   // Mapbox layer (disabled due to API token requirements)
   // Note: Layer URLs were truncated in source. Use OSM or other providers instead
+  // Mapbox token should be configured in environment variables
   LAYER_MBOX = {
     id: 'mapbox',
     name: 'Mapbox',
     enabled: false,
-    // Disabled - requires valid API token. Use OpenStreetMap as fallback
-    layer: null
+    layer: L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=YOUR_MAPBOX_ACCESS_TOKEN', {
+      tileSize: 512,
+      maxZoom: 18,
+      zoomOffset: -1,
+      attribution: 'Mapbox',
+      subdomains: ['a', 'b', 'c', 'd']
+    })
   };
 
   // Neighborhood
@@ -123,7 +129,7 @@ export class GeolocationComponent implements OnInit, OnDestroy {
     'Open Street Map': this.LAYER_OSM.layer,
     'Mapbox': this.LAYER_MBOX.layer
   };
-  options = {zoomControl: false, fullscreenControl: true};
+  options = {zoomControl: false, fullscreenControl: true, maxZoom: 22, minZoom: 1};
   zoom = 14;
   zoomOptions = {
     position: 'topright'
@@ -149,7 +155,7 @@ export class GeolocationComponent implements OnInit, OnDestroy {
   // Form model object
   model = new LayersModel(
     [this.LAYER_MBOX, this.LAYER_OSM, this.LAYER_GSM],
-    this.LAYER_MBOX.id,
+    this.LAYER_GSM.id,
     [ this.weightingArea, this.marker]
   );
 

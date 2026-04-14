@@ -31,14 +31,14 @@ module.exports = {
     // Increased timeouts (Phase 5 optimization)
     // Docker startup can be slow, so we need generous timeouts
     serverSelectionTimeoutMS: 60000,    // 60s (was 30s) - for server discovery
-    socketTimeoutMS: 90000,             // 90s (was 45s) - for operations
+    socketTimeoutMS: 120000,            // 120s for socket operations (increased for aggregations)
     connectTimeoutMS: 60000,            // 60s - for initial connection
+    
+    // Buffer settings (prevent operation timeout during connection)
+    bufferCommands: true,               // Keep buffering enabled (bin/www waits for connection)
     
     // Connection heartbeat (keep-alive)
     heartbeatFrequencyMS: 10000,        // Check server every 10s
-    
-    // Prevent buffer overflow
-    bufferMaxEntries: 0,
     
     // MongoDB name
     dbName: process.env.DB_NAME || 'escolasapp',
