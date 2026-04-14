@@ -14,6 +14,13 @@ version: '3.8'
 #   Staging only:             docker-compose --profile staging up -d
 #   Production:               docker-compose --profile production up -d
 #   All services:             docker-compose --profile all up -d
+#
+# Tested Stack (Option A Modernization - April 14, 2026):
+#   - Node: 22.22.2 LTS (Alpine)
+#   - MongoDB: 6.0.27 (upgraded from 5.0)
+#   - Express: 4.19.2 (upgraded from 4.15.3)
+#   - Mongoose: 8.5.0 (upgraded from 5.13.15)
+#   - TypeScript: 5.4.2 (upgraded from 2.6.2)
 
 volumes:
   mongodb_data:
@@ -24,7 +31,7 @@ services:
   # MongoDB (Shared foundation - used by all profiles)
   # ============================================================================
   mongodb:
-    image: mongo:6.0-alpine
+    image: mongo:6.0
     container_name: escolasapp_mongodb
     profiles: [all, dev, staging, production]
     restart: unless-stopped
