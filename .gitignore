@@ -4,9 +4,13 @@
 /dist
 /tmp
 /out-tsc
+.angular/
+*.tsbuildinfo
 
 # dependencies
 /node_modules
+package-lock.json
+yarn.lock
 
 # IDEs and editors
 /.idea
@@ -26,6 +30,17 @@
 !.vscode/extensions.json
 .vscode/extensions
 .vscode/ipch
+.history
+
+# Text editor backups
+*.swp
+*.swo
+*~
+.~*
+
+# JetBrains IDEs
+.idea/
+*.iml
 
 # Vagrant
 .vagrant/
@@ -41,6 +56,10 @@
 npm-debug.log
 testem.log
 /typings
+lerna-debug.log
+yarn-error.log
+.npm
+.eslintcache
 
 # e2e
 /e2e/*.js
@@ -49,6 +68,14 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+.AppleDouble
+.LSOverride
+desktop.ini
+$RECYCLE.BIN/
+
+# Process files
+*.pid
+*.pid.lock
 
 # configuration
 /config
@@ -59,3 +86,5 @@ Thumbs.db
 .env.*.local
 *.local
 
+db/*
+!db/README.md
