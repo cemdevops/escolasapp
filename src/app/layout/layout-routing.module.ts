@@ -7,8 +7,8 @@ const routes: Routes = [
   {
     path: '', component: LayoutComponent,
     children: [
-      { path: 'geolocation', loadChildren: './geolocation/geolocation.module#GeolocationModule' },
-      { path: 'school-details/:id', loadChildren: './geolocation/geolocation.module#GeolocationModule' },
+      { path: 'geolocation', loadChildren: () => import('./geolocation/geolocation.module').then(m => m.GeolocationModule) },
+      { path: 'school-details/:id', loadChildren: () => import('./geolocation/geolocation.module').then(m => m.GeolocationModule) },
       { path: 'about-project', component: AboutProjectComponent}
     ]
   }];

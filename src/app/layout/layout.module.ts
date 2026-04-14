@@ -7,7 +7,6 @@ import { LayoutRoutingModule } from './layout-routing.module';
 import { LayoutComponent } from './layout.component';
 import { SidebarComponent} from '../shared';
 
-import { HttpModule} from '@angular/http';
 import {HeaderModule} from '../shared/components/header/header.module';
 import {ShareddataService} from '../services/shareddata.service';
 import {SchoolService} from '../services/school.service';
@@ -17,10 +16,9 @@ import { AboutProjectComponent } from './about-project/about-project.component';
 @NgModule({
   imports: [
     CommonModule,
-    NgbDropdownModule.forRoot(),
+    NgbDropdownModule,
     LayoutRoutingModule,
     TranslateModule,
-    HttpModule,
     HeaderModule
   ],
   declarations: [

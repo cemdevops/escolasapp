@@ -1,8 +1,26 @@
 import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ShareddataService} from '../../../../services/shareddata.service';
 import {TranslateService} from '@ngx-translate/core';
-import {Subscription} from 'rxjs/Subscription';
+import {Subscription} from 'rxjs';
 import * as d3 from 'd3';
+import {
+  select,
+  timeParse,
+  bisector,
+  scaleTime,
+  scaleLinear,
+  line,
+  max,
+  min,
+  extent,
+  axisLeft,
+  axisBottom,
+  format,
+  scaleBand,
+  scaleOrdinal,
+  stack,
+  pointer
+} from 'd3';
 
 @Component({
   selector: 'app-graphs',
@@ -610,24 +628,24 @@ export class GraphsComponent implements OnInit, OnDestroy {
     const width = divWidth - margin.left - margin.right,
       height = divHeight - margin.top - margin.bottom;
     // Remove all children from HTML
-    d3.select(containerDiv.nativeElement).html('');
+    select(containerDiv.nativeElement).html('');
     if (dataGraph.length > 0) {
       // define time format
-      const parseYear = d3.timeParse('%Y');
-      const bisectDate = d3.bisector(function(d) { return (<any>d).variableName; }).left;
+      const parseYear = timeParse('%Y');
+      const bisectDate = bisector(function(d) { return (<any>d).variableName; }).left;
 
       // define scales
-      const x = d3.scaleTime().range([0, width]);
-      const y = d3.scaleLinear().range([height, 0]);
+      const x = scaleTime().range([0, width]);
+      const y = scaleLinear().range([height, 0]);
 
       // define line generator
-      const line = d3.line()
+      const lineGen = line()
       // .curve(d3.curveBasis)
         .x(function (d) { return x((<any>d).variableName); })
         .y(function (d) { return y((<any>d).variableValue); });
 
       // Define chart dimensions
-      const svg = d3.select(containerDiv.nativeElement).append('svg')
+      const svg = select(containerDiv.nativeElement).append('svg')
         .attr('width', width + margin.left + margin.right)
         .attr('height', height + margin.top + margin.bottom);
       const g = svg.append('g')
@@ -640,15 +658,15 @@ export class GraphsComponent implements OnInit, OnDestroy {
       });
 
       // define x axis
-      x.domain(d3.extent(dataGraph, function(d) { return d.variableName; }));
+      x.domain(extent(dataGraph, function(d) { return d.variableName; }));
 
-      y.domain([0, d3.max(dataGraph, function(d) { return d.variableValue; }) ]);
+      y.domain([0, max(dataGraph, function(d) { return d.variableValue; }) ]);
 
       // append x axis
       g.append('g')
         .attr('class', 'axis axis--x')
         .attr('transform', 'translate(0,' + height + ')')
-        .call(d3.axisBottom(x).ticks(6))
+        .call(axisBottom(x).ticks(6))
         .selectAll('text')
         .style('text-anchor', 'end')
         .attr('dx', '-.8em')
@@ -658,7 +676,7 @@ export class GraphsComponent implements OnInit, OnDestroy {
       // append y axis
       g.append('g')
         .attr('class', 'axis axis--y')
-        .call(d3.axisLeft(y).ticks(6).tickFormat(function(d) { return (d) + valuesUnit; }))
+        .call(axisLeft(y).ticks(6).tickFormat(function(d) { return (d) + valuesUnit; }))
         .append('text')
         .attr('class', 'axis-title')
         .attr('transform', 'rotate(-90)')
@@ -671,7 +689,7 @@ export class GraphsComponent implements OnInit, OnDestroy {
       g.append('path')
         .datum(dataGraph)
         .attr('class', 'line')
-        .attr('d', line);
+        .attr('d', lineGen);
 
       const focus = g.append('g')
         .attr('class', 'focus')
@@ -702,7 +720,7 @@ export class GraphsComponent implements OnInit, OnDestroy {
         .on('mouseover', function() { focus.style('display', null); })
         .on('mouseout', function() { focus.style('display', 'none'); })
         .on('mousemove', function(data) {
-          const x0 = x.invert(d3.mouse(<any>this)[0]),
+          const x0 = x.invert(pointer(<any>this)[0]),
             i = bisectDate(dataGraph, x0, 1),
             d0 = dataGraph[i - 1],
             d1 = dataGraph[i],
@@ -781,7 +799,7 @@ export class GraphsComponent implements OnInit, OnDestroy {
       chart.append('g')
         .attr('class', 'y axis')
         .attr('transform', 'translate(' + margin.left + ',' + 0 + ')')
-        .call(d3.axisLeft(y));
+        .call(axisLeft(y));
 
       // Plotting the chart
       chart.selectAll('bar')
@@ -798,10 +816,10 @@ export class GraphsComponent implements OnInit, OnDestroy {
         .attr('height', function (d) {
           return height - y(d.variableValue);
         })
-        .on('mousemove', function (d) {
+        .on('mousemove', function (event, d) {
           tooltip
-            .style('left', d3.event.pageX - 50 + 'px')
-            .style('top', d3.event.pageY - 70 + 'px')
+            .style('left', event.pageX - 50 + 'px')
+            .style('top', event.pageY - 70 + 'px')
             .style('display', 'inline-block')
             .html((d.variableName) + '<br>' + (d.variableValue) + valuesUnit);
         })
@@ -849,8 +867,8 @@ export class GraphsComponent implements OnInit, OnDestroy {
 
       const color = d3.scaleOrdinal(['#F29F05', '#E7DD7B', '#1f77b4', '#aec7e8', '#88A61B', '#98df8a', '#d62728']);
 
-      const keys = d3.keys(dataGraph[0]).filter(function (key) { return key !== 'ano'; });
-      color.domain(keys);
+      const dataKeys = Object.keys(dataGraph[0]).filter(function (key) { return key !== 'ano'; });
+      color.domain(dataKeys);
 
       dataGraph.forEach(function(d) {
         let y0 = 0;
@@ -859,11 +877,11 @@ export class GraphsComponent implements OnInit, OnDestroy {
       });
 
       x.domain(dataGraph.map(function(d) { return d.ano; }));
-      y.domain([0, d3.max(dataGraph, function(d) { return d.total; })]).nice();
+      y.domain([0, max(dataGraph, function(d) { return d.total; })]).nice();
 
       g.append('g')
         .selectAll('g')
-        .data(d3.stack().keys(keys)(dataGraph))
+        .data(stack().keys(dataKeys)(dataGraph))
         .enter().append('g')
         .attr('fill', function(d) { return color(d.key); })
         .selectAll('rect')
@@ -877,13 +895,13 @@ export class GraphsComponent implements OnInit, OnDestroy {
           tooltip.style('display', null);
         })
         .on('mouseout', function() { tooltip.style('display', 'none'); })
-        .on('mousemove', function(d) {
+        .on('mousemove', function(event, d) {
           // console.log(d);
-          const xPosition = d3.mouse(<any>this)[0] - 5;
-          const yPosition = d3.mouse(<any>this)[1] - 5;
+          const xPosition = pointer(<any>this)[0] - 5;
+          const yPosition = pointer(<any>this)[1] - 5;
           tooltip
-            .style('left', d3.event.pageX - 50 + 'px')
-            .style('top', d3.event.pageY - 70 + 'px')
+            .style('left', event.pageX - 50 + 'px')
+            .style('top', event.pageY - 70 + 'px')
             .style('display', 'inline-block')
             .html((d[1] - d[0]).toFixed(digitsDecimals) + valuesUnit);
         });
@@ -891,11 +909,11 @@ export class GraphsComponent implements OnInit, OnDestroy {
       g.append('g')
         .attr('class', 'axis')
         .attr('transform', 'translate(0,' + height + ')')
-        .call(d3.axisBottom(x));
+        .call(axisBottom(x));
 
       g.append('g')
         .attr('class', 'axis')
-        .call(d3.axisLeft(y).ticks(null, 's'))
+        .call(axisLeft(y).ticks(null, 's'))
         .append('text')
         .attr('x', 2)
         .attr('y', y(y.ticks().pop()) + 0.5)
@@ -910,7 +928,7 @@ export class GraphsComponent implements OnInit, OnDestroy {
         .attr('font-size', 9)
         .attr('text-anchor', 'end')
         .selectAll('g')
-        .data(keys.slice().reverse())
+        .data(dataKeys.slice().reverse())
         .enter().append('g')
         .attr('transform', function(d, i) { return 'translate(75,' + i * 20 + ')'; });
 

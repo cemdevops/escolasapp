@@ -7,10 +7,11 @@ import { AgmCoreModule } from '@agm/core';
 // import {HeaderModule} from '../../shared/components/header/header.module';
 import {LeafletModule} from '@asymmetrik/ngx-leaflet';
 import {LeafletMarkerClusterModule} from '@asymmetrik/ngx-leaflet-markercluster';
-import {ChartsModule as Ng2Charts} from 'ng2-charts';
+import {NgChartsModule} from 'ng2-charts';
 import {FormsModule} from '@angular/forms';
 import {TranslateModule} from '@ngx-translate/core';
-import {MatIconModule, MatTabsModule} from '@angular/material';
+import {MatIconModule} from '@angular/material/icon';
+import {MatTabsModule} from '@angular/material/tabs';
 import {MapDirective } from './map.directive';
 import {
   IndicatorsByWeightingAreasComponent
@@ -26,7 +27,7 @@ import { GraphsComponent } from './educational-indicators/graphs/graphs.componen
     AgmCoreModule,
     LeafletModule,
     LeafletMarkerClusterModule,
-    Ng2Charts,
+    NgChartsModule,
     FormsModule,
     TranslateModule,
     MatTabsModule,

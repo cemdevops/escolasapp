@@ -1,5 +1,4 @@
-import {Component, NgModule} from '@angular/core';
-import { Http, HttpModule } from '@angular/http';
+import {Component, CUSTOM_ELEMENTS_SCHEMA, NgModule} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
@@ -10,12 +9,14 @@ import { AgmCoreModule} from '@agm/core';
 import {HttpClient, HttpClientModule} from '@angular/common/http';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HeaderModule} from './shared/components/header/header.module';
-import {Ng2CompleterModule} from 'ng2-completer';
+// import {Ng2CompleterModule} from 'ng2-completer';
 import {LeafletModule} from '@asymmetrik/ngx-leaflet';
 import {LeafletMarkerClusterModule} from '@asymmetrik/ngx-leaflet-markercluster';
 import {NotFoundModule} from './not-found/not-found.module';
 import {NgbDropdownModule} from '@ng-bootstrap/ng-bootstrap';
-import {MatSlideToggleModule, MatIconModule, MatTabsModule, MatTabGroup} from '@angular/material';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatIconModule} from '@angular/material/icon';
+import {MatTabsModule} from '@angular/material/tabs';
 import {ApSecVariableService} from './services/ap-sec-variable.service';
 import {BrSpRmspSecVariableService} from './services/br-sp-rmsp-sec-variable.service';
 import {WeightingAreaService} from './services/weighting-area.service';
@@ -36,9 +37,8 @@ export function HttpLoaderFactory (http: HttpClient) {
     BrowserAnimationsModule,
     AgmCoreModule.forRoot({ 	apiKey: 'AIzaSyAQutpUtLQSoM-AjbwB0sCnPcw1M3xx1s4' // key of Google Maps Javascript API
     }),
-    LeafletModule.forRoot(),
-    LeafletMarkerClusterModule.forRoot(),
-    HttpModule,
+    LeafletModule,
+    LeafletMarkerClusterModule,
     HttpClientModule,
     AppRoutingModule,
     TranslateModule.forRoot({
@@ -51,14 +51,15 @@ export function HttpLoaderFactory (http: HttpClient) {
     FormsModule,
     ReactiveFormsModule,
     HeaderModule,
-    Ng2CompleterModule,
+    // Ng2CompleterModule,
     NotFoundModule,
-    NgbDropdownModule.forRoot(),
+    NgbDropdownModule,
     MatSlideToggleModule,
     MatIconModule,
     MatTabsModule,
 
   ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [ShareddataService, WeightingAreaService, SchoolService, ApSecVariableService, BrSpRmspSecVariableService],
   bootstrap: [AppComponent]
 })

@@ -1,7 +1,8 @@
 import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
 import {SchoolService} from '../../../services/school.service';
 import {ShareddataService} from '../../../services/shareddata.service';
-import {MatIconRegistry} from '@angular/material';
+import {MatIconRegistry} from '@angular/material/icon';
+import {DomSanitizer} from '@angular/platform-browser';
 import {Subscription} from 'rxjs/Subscription';
 
 @Component({

@@ -2,11 +2,12 @@ import {
   Component, EventEmitter, Output, OnInit, OnDestroy, ViewChild, ViewEncapsulation,
   ElementRef, AfterViewInit, Renderer2
 } from '@angular/core';
-import {Subscription} from 'rxjs/Subscription';
+import {Subscription} from 'rxjs';
 import {ShareddataService} from '../../../services/shareddata.service';
 import {ApSecVariableService} from '../../../services/ap-sec-variable.service';
 import {BrSpRmspSecVariableService} from '../../../services/br-sp-rmsp-sec-variable.service';
 import * as d3 from 'd3';
+import { arc, scaleOrdinal, schemeCategory10, interpolate, select, max, scaleLinear, scaleBand, axisRight, axisLeft, axisBottom, format } from 'd3';
 import {TranslateService} from '@ngx-translate/core';
 
 @Component({
@@ -709,10 +710,10 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
       .attr('height', y.bandwidth())
       .attr('y', function(d) { return y(d.variableName); })
       .attr('width', function(d) { return x(d.variableValue); })
-      .on('mousemove', function(d) {
+      .on('mousemove', function(event, d) {
         tooltip
-          .style('left', d3.event.pageX - 50 + 'px')
-          .style('top', d3.event.pageY - 70 + 'px')
+          .style('left', event.pageX - 50 + 'px')
+          .style('top', event.pageY - 70 + 'px')
           .style('display', 'inline-block')
           .html((d.variableName) + '<br>' + (d.variableValue) + '%');
       })
@@ -808,10 +809,10 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
         .attr('height', function (d) {
           return height - y(d.variableValue);
         })
-        .on('mousemove', function (d) {
+        .on('mousemove', function (event, d) {
           tooltip
-            .style('left', d3.event.pageX - 50 + 'px')
-            .style('top', d3.event.pageY - 70 + 'px')
+            .style('left', event.pageX - 50 + 'px')
+            .style('top', event.pageY - 70 + 'px')
             .style('display', 'inline-block')
             .html((d.variableName) + '<br>' + (d.variableValue) + '%');
         })
@@ -882,10 +883,10 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
         return 'translate(' + spaceForLabels + ',' +
           (i * barHeight + gapBetweenGroups * (0.5 + Math.floor(i / dataGraph.series.length))) + ')';
       })
-      .on('mousemove', function(d) {
+      .on('mousemove', function(event, d) {
         tooltip
-          .style('left', d3.event.pageX - 50 + 'px')
-          .style('top', d3.event.pageY - 70 + 'px')
+          .style('left', event.pageX - 50 + 'px')
+          .style('top', event.pageY - 70 + 'px')
           .style('display', 'inline-block')
           .html(d + '%');
       })
@@ -1059,7 +1060,7 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
         return color((<any>d).data.variableName);
       })
       .attr('class', 'slice')
-      .merge(slice)
+      .merge(slice as any)
       .style('opacity', 0.7)
       .transition().duration(1000)
       .attrTween('d', function (d) {
@@ -1073,9 +1074,9 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
 
     // when mouse leaves div
     slice
-      .on('mousemove', function(d) {
-        tooltip.style('top', (d3.event.layerY + 10) + 'px') // always 10px below the cursor
-          .style('left', (d3.event.layerX + 10) + 'px') // always 10px to the right of the mouse
+      .on('mousemove', function(event, d) {
+        tooltip.style('top', (event.layerY + 10) + 'px') // always 10px below the cursor
+          .style('left', (event.layerX + 10) + 'px') // always 10px to the right of the mouse
           .style('display', 'inline-block');
       });
 
@@ -1106,7 +1107,7 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
         // return ((<any>d).data.variableName + ': ' + (<any>d).data.variableValue + '%');
         return ((<any>d).data.variableValue + '%');
       })
-      .merge(text)
+      .merge(text as any)
       .transition().duration(1000)
       .attrTween('transform', function(d) {
         (<any>this)._current = (<any>this)._current || d;
@@ -1140,7 +1141,7 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
 
     polyline.enter()
       .append('polyline')
-      .merge(polyline)
+      .merge(polyline as any)
       .transition().duration(1000)
       .attrTween('points', function(d) {
         (<any>this)._current = (<any>this)._current || d;
@@ -1343,10 +1344,10 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
         tooltip.style('display', 'inline-block');
         tooltip.html(d.group +  ' anos'  + '<br/>' + d.maleperc + '%');
       })
-      .on('mousemove', function(d) {
+      .on('mousemove', function(event, d) {
         tooltip
-          .style('left', d3.event.pageX - 50 + 'px')
-          .style('top', d3.event.pageY - 70 + 'px');
+          .style('left', event.pageX - 50 + 'px')
+          .style('top', event.pageY - 70 + 'px');
       })
       .on('mouseout', function(d) { tooltip.style('display', 'none'); });
 
@@ -1358,10 +1359,10 @@ export class IndicatorsByWeightingAreasComponent implements OnInit, OnDestroy, A
       .attr('y', function(d) { return yScale(d.group); })
       .attr('width', function(d) { return xScale(d.femaleperc); })
       .attr('height', yScale.bandwidth())
-      .on('mousemove', function(d) {
+      .on('mousemove', function(event, d) {
         tooltip
-          .style('left', d3.event.pageX - 50 + 'px')
-          .style('top', d3.event.pageY - 70 + 'px')
+          .style('left', event.pageX - 50 + 'px')
+          .style('top', event.pageY - 70 + 'px')
           .style('display', 'inline-block')
           .html(d.group + ' anos' + '<br/>' +  d.femaleperc + '%');
       })

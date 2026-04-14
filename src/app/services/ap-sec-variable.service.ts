@@ -1,15 +1,14 @@
 import { Injectable } from '@angular/core';
-import {Http} from '@angular/http';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable()
 export class ApSecVariableService {
 
-  constructor(private http: Http) { }
+  constructor(private http: HttpClient) { }
 
   getAllWeightingAreasInfo() {
     return new Promise((resolve, reject) => {
       this.http.get('/ap-secvariable')
-        .map(res => res.json())
         .subscribe(res => {
           resolve(res);
         }, (err) => {
@@ -22,7 +21,6 @@ export class ApSecVariableService {
   showWeightingAreaInfoByID(id) {
     return new Promise((resolve, reject) => {
       this.http.get('/ap-secvariable/' + id)
-        .map(res => res.json())
         .subscribe(res => {
           resolve(res);
         }, (err) => {
@@ -35,7 +33,6 @@ export class ApSecVariableService {
   showWeightingAreaInfoByCodAP(codAP: string) {
     return new Promise((resolve, reject) => {
       this.http.get('/ap-secvariable/search/' + codAP)
-        .map(res => res.json())
         .subscribe(res => {
           resolve(res);
         }, (err) => {

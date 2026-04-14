@@ -1,17 +1,16 @@
 import { Injectable } from '@angular/core';
-import {Http} from '@angular/http';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable()
 export class BrSpRmspSecVariableService {
 
-  constructor(private http: Http) { }
+  constructor(private http: HttpClient) { }
 
   /* GET ALL socioeconomic variables for Brasil, SP, RMSP */
   /* Teste: http://localhost:3002/br-sp-rmsp-secvariable*/
   getBrSpRmspSecInfo() {
     return new Promise((resolve, reject) => {
       this.http.get('/br-sp-rmsp-secvariable')
-        .map(res => res.json())
         .subscribe(res => {
           resolve(res);
         }, (err) => {
@@ -25,7 +24,6 @@ export class BrSpRmspSecVariableService {
   showBrSpRmspSecInfoByID(id) {
     return new Promise((resolve, reject) => {
       this.http.get('/br-sp-rmsp-secvariable/' + id)
-        .map(res => res.json())
         .subscribe(res => {
           resolve(res);
         }, (err) => {
@@ -39,7 +37,6 @@ export class BrSpRmspSecVariableService {
   showBrSpRmspSecInfoByNivel(nivel: string) {
     return new Promise((resolve, reject) => {
       this.http.get('/br-sp-rmsp-secvariable/search/' + nivel)
-        .map(res => res.json())
         .subscribe(res => {
           resolve(res);
         }, (err) => {
@@ -53,7 +50,6 @@ export class BrSpRmspSecVariableService {
   showBrSpRmspSecInfoByNivelAndVariable(nivel: string, variable: string) {
     return new Promise((resolve, reject) => {
       this.http.get('/br-sp-rmsp-secvariable/search/' + nivel + '/' + variable)
-        .map(res => res.json())
         .subscribe(res => {
           resolve(res);
         }, (err) => {

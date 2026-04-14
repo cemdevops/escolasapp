@@ -2,7 +2,7 @@ import {Component, EventEmitter, HostListener, OnInit, Output} from '@angular/co
 import {TranslateService} from '@ngx-translate/core';
 import {CompleterData, CompleterItem} from 'ng2-completer';
 import {ShareddataService} from '../../../services/shareddata.service';
-import {Http} from '@angular/http';
+import { HttpClient } from '@angular/common/http';
 import {CustomData} from '../../../custom.data';
 
 
@@ -23,7 +23,7 @@ export class HeaderComponent implements OnInit {
 
   constructor(private translate: TranslateService,
               private sharedDataService: ShareddataService,
-              private http: Http) {
+              private http: HttpClient) {
     this.schoolListFiltered = new CustomData(http);
   }
 

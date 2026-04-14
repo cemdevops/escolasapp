@@ -1,13 +1,12 @@
-///<reference path="../../../../node_modules/@types/leaflet/index.d.ts"/>
+// @ts-nocheck
 import {Component, OnInit, OnDestroy, EventEmitter, Output, NgZone, HostListener} from '@angular/core';
 import {SchoolService} from '../../services/school.service';
 import {routerTransition} from '../../router.animations';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import {ShareddataService} from '../../services/shareddata.service';
-import {Subscription} from 'rxjs/Subscription';
+import {Subscription} from 'rxjs';
 import {Router} from '@angular/router';
-import 'rxjs/add/operator/filter';
 import {WeightingAreaService} from '../../services/weighting-area.service';
 import {LayersModel} from './layers.model';
 

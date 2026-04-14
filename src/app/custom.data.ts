@@ -1,9 +1,9 @@
-import { Http, Response } from '@angular/http';
-import { Subject } from 'rxjs/Subject';
+import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Subject, Observable } from 'rxjs';
 import { CompleterData, CompleterItem} from 'ng2-completer';
 
 export class CustomData extends Subject<CompleterItem[]> implements CompleterData {
-  constructor(private http: Http) {
+  constructor(private http: HttpClient) {
     super();
   }
 
@@ -12,16 +12,16 @@ export class CustomData extends Subject<CompleterItem[]> implements CompleterDat
     // this.http.get('/school/search?text=' + term )
     console.log('/school/search/' + term);
     this.http.get('/school/search/' + term )
-      .map((res: Response) => {
+      .subscribe((data: any) => {
         // Convert the result to CompleterItem[]
-        const data = res.json();
         // display the items into range 0 e 5
-        // data = data.slice(0, 5);
         const matches: CompleterItem[] = data.map((item: any) => this.convertToItem(item));
         this.next(matches);
-      })
-      .catch(() => [])
-      .subscribe();
+      },
+      (err) => {
+        console.error('Error searching schools', err);
+      }
+    );
   }
 
   public cancel() {

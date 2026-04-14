@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import {googleAnalytics} from '../assets/script';
 import {NavigationStart, Router} from '@angular/router';
-import 'rxjs/add/operator/filter';
+import { filter } from 'rxjs/operators';
 
 
 @Component({
@@ -22,8 +22,10 @@ export class AppComponent {
     this.translate.use(this.defaultLang);
 
     // Google Analytics
-    this.router.events.filter(event => event instanceof NavigationStart).subscribe(event => {
-      const url = event['url'];
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationStart)
+    ).subscribe((event: NavigationStart) => {
+      const url = event.url;
       if (url !== null && url !== undefined && url !== '' && url.indexOf('null') < 0) {
         googleAnalytics(url);
       }
