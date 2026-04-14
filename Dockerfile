@@ -5,7 +5,7 @@
 # ============================================================================
 # Stage 1: Dependencies Builder
 # ============================================================================
-FROM node:12-alpine AS deps-builder
+FROM node:22-alpine AS deps-builder
 
 LABEL stage=deps-builder
 
@@ -23,7 +23,7 @@ RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --ignore-scripts
 # ============================================================================
 # Stage 2: Runtime - Express Server with Static SPA
 # ============================================================================
-FROM node:12-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 

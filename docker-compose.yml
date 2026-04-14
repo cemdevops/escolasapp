@@ -24,7 +24,7 @@ services:
   # MongoDB (Shared foundation - used by all profiles)
   # ============================================================================
   mongodb:
-    image: mongo:5.0
+    image: mongo:6.0-alpine
     container_name: escolasapp_mongodb
     profiles: [all, dev, staging, production]
     restart: unless-stopped

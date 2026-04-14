@@ -5,8 +5,8 @@ Vagrant.configure("2") do |config|
   # ============================================================================
   # Base Box Configuration
   # ============================================================================
-  config.vm.box = "ubuntu/focal64"
-  config.vm.box_version = ">= 20220101.0.0"
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.box_version = ">= 202401.02.0"
 
   # ============================================================================
   # VM Resource Configuration
